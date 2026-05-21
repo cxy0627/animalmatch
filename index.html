@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Match - English Learning Game</title>
+    <style>
+        :root {
+            --primary-blue: #4A90E2;
+            --light-blue: #EBF4FF;
+            --success-green: #27AE60;
+            --error-red: #E74C3C;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --card-hover-shadow: 0 8px 24px rgba(74, 144, 226, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Poppins', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #E8F4FD 0%, #D4E8F9 50%, #E0F0F8 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 28px;
+            padding: 40px 35px 35px;
+            box-shadow: 0 20px 60px rgba(74, 144, 226, 0.15);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .game-header h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4A90E2, #357ABD);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .game-header .subtitle {
+            color: #7F8C8D;
+            font-size: 1em;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 28px;
+            font-weight: 600;
+            color: #4A90E2;
+            font-size: 0.95em;
+        }
+
+        .progress-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #D5E5F5;
+            transition: all 0.3s ease;
+        }
+
+        .progress-dot.completed {
+            background: #27AE60;
+            box-shadow: 0 0 12px rgba(39, 174, 96, 0.4);
+            transform: scale(1.2);
+        }
+
+        .animals-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 35px;
+            min-height: 110px;
+            padding: 15px;
+            background: #F8FBFE;
+            border-radius: 20px;
+            border: 2px dashed #D5E5F5;
+            transition: all 0.3s ease;
+        }
+
+        .animal-card {
+            width: 120px;
+            height: 120px;
+            border-radius: 18px;
+            background: white;
+            box-shadow: var(--card-shadow);
+            cursor: grab;
+            overflow: hidden;
+            transition: all 0.25s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid transparent;
+        }
+
+        .animal-card:active {
+            cursor: grabbing;
+        }
+
+        .animal-card:hover {
+            box-shadow: var(--card-hover-shadow);
+            transform: translateY(-3px);
+            border-color: #4A90E2;
+        }
+
+        .animal-card.dragging {
+            opacity: 0.7;
+            transform: scale(1.05);
+            box-shadow: 0 12px 30px rgba(74, 144, 226, 0.35);
+            z-index: 100;
+            border-color: #4A90E2;
+            cursor: grabbing;
+        }
+
+        .animal-card.matched {
+            opacity: 0.4;
+            pointer-events: none;
+            cursor: default;
+            border-color: #27AE60;
+            transform: scale(0.95);
+            filter: grayscale(30%);
+        }
+
+        .animal-card.shake {
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            15% { transform: translateX(-8px); }
+            30% { transform: translateX(8px); }
+            45% { transform: translateX(-6px); }
+            60% { transform: translateX(6px); }
+            75% { transform: translateX(-3px); }
+            90% { transform: translateX(3px); }
+        }
+
+        .animal-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        .words-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .word-slot {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            border-radius: 16px;
+            padding: 14px 18px 14px 22px;
+            box-shadow: var(--card-shadow);
+            min-width: 170px;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            position: relative;
+        }
+
+        .word-slot.matched {
+            border-color: #27AE60;
+            background: #F0FAF4;
+            box-shadow: 0 4px 16px rgba(39, 174, 96, 0.2);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.9); }
+            60% { transform: scale(1.06); }
+            100% { transform: scale(1); }
+        }
+
+        .word-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            position: relative;
+        }
+
+        .word-slot .word-text {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2C3E50;
+            letter-spacing: 0.5px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .error-count {
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #E74C3C;
+            min-height: 18px;
+            line-height: 1;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .error-count.has-errors {
+            animation: errorPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes errorPopIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .speaker-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #4A90E2;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 3px 10px rgba(74, 144, 226, 0.3);
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .speaker-btn:hover {
+            background: #357ABD;
+            transform: scale(1.08);
+            box-shadow: 0 5px 18px rgba(74, 144, 226, 0.45);
+        }
+
+        .speaker-btn:active {
+            transform: scale(0.94);
+            background: #2C6AA0;
+        }
+
+        .speaker-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+            pointer-events: none;
+        }
+
+        .speaker-btn.playing {
+            animation: pulse 0.8s infinite;
+            background: #E67E22;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.5); }
+            50% { box-shadow: 0 0 0 16px rgba(230, 126, 34, 0); }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: white;
+            border-radius: 24px;
+            padding: 40px 35px;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.25);
+            animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 450px;
+            width: 90%;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.95); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal .trophy {
+            font-size: 4em;
+            margin-bottom: 10px;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .modal h2 {
+            font-size: 1.8em;
+            color: #2C3E50;
+            margin-bottom: 8px;
+        }
+
+        .modal p {
+            color: #7F8C8D;
+            margin-bottom: 8px;
+            font-size: 1.05em;
+        }
+
+        .modal .error-summary {
+            background: #FFF5F5;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #E74C3C;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        .btn-restart {
+            background: #4A90E2;
+            color: white;
+            border: none;
+            padding: 14px 35px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(74, 144, 226, 0.4);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-restart:hover {
+            background: #357ABD;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(74, 144, 226, 0.5);
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 25px 18px 20px;
+                border-radius: 22px;
+            }
+            .animal-card {
+                width: 90px;
+                height: 90px;
+                border-radius: 14px;
+            }
+            .word-slot {
+                padding: 10px 12px 10px 16px;
+                min-width: 140px;
+                gap: 8px;
+            }
+            .word-slot .word-text {
+                font-size: 1.1em;
+                min-width: 60px;
+            }
+            .speaker-btn {
+                width: 36px;
+                height: 36px;
+            }
+            .game-header h1 {
+                font-size: 1.6em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container" id="gameContainer">
+        <div class="game-header">
+            <h1>🐾 Animal Match</h1>
+            <p class="subtitle">Drag the animal to its correct English name!</p>
+        </div>
+
+        <div class="progress-bar">
+            <span>Progress</span>
+            <div class="progress-dots" id="progressDots"></div>
+            <span id="progressText">0/6</span>
+        </div>
+
+        <div class="animals-area" id="animalsArea"></div>
+
+        <div class="words-area" id="wordsArea"></div>
+    </div>
+
+    <div class="modal-overlay" id="successModal" style="display: none;">
+        <div class="modal">
+            <div class="trophy">🏆</div>
+            <h2>Excellent Job!</h2>
+            <p>You matched all the animals correctly!</p>
+            <div class="error-summary" id="errorSummary"></div>
+            <button class="btn-restart" id="restartBtn">Play Again 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== 素材定义 ====================
+            const animalsData = [
+                {
+                    id: 'elephant',
+                    name: 'Elephant',
+                    imageUrl: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop',
+                    word: 'Elephant'
+                },
+                {
+                    id: 'lion',
+                    name: 'Lion',
+                    imageUrl: 'https://images.unsplash.com/photo-1614027164847-1b28cfe1df60?w=400&h=400&fit=crop',
+                    word: 'Lion'
+                },
+                {
+                    id: 'panda',
+                    name: 'Panda',
+                    imageUrl: 'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=400&h=400&fit=crop',
+                    word: 'Panda'
+                },
+                {
+                    id: 'eagle',
+                    name: 'Eagle',
+                    imageUrl: 'https://images.unsplash.com/photo-1611689342806-0863700ce1e4?w=400&h=400&fit=crop',
+                    word: 'Eagle'
+                },
+                {
+                    id: 'dolphin',
+                    name: 'Dolphin',
+                    imageUrl: 'https://images.unsplash.com/photo-1607153333879-c174d265f1d2?w=400&h=400&fit=crop',
+                    word: 'Dolphin'
+                },
+                {
+                    id: 'giraffe',
+                    name: 'Giraffe',
+                    imageUrl: 'https://images.unsplash.com/photo-1548506446-86bfddac5620?w=400&h=400&fit=crop',
+                    word: 'Giraffe'
+                }
+            ];
+
+            // ==================== 发音管理器 ====================
+            const pronunciationManager = {
+                currentButton: null,
+                isSpeaking: false,
+
+                speak(word, buttonElement) {
+                    if (this.isSpeaking && this.currentButton === buttonElement) {
+                        return;
+                    }
+
+                    this.stop();
+
+                    if ('speechSynthesis' in window) {
+                        const utterance = new SpeechSynthesisUtterance(word);
+                        utterance.lang = 'en-GB';
+                        utterance.rate = 0.8;
+                        utterance.pitch = 1;
+                        utterance.volume = 1;
+
+                        this.isSpeaking = true;
+                        this.currentButton = buttonElement;
+                        if (buttonElement) {
+                            buttonElement.classList.add('playing');
+                        }
+
+                        utterance.onend = () => {
+                            this.isSpeaking = false;
+                            if (this.currentButton) {
+                                this.currentButton.classList.remove('playing');
+                                this.currentButton = null;
+                            }
+                        };
+
+                        utterance.onerror = (event) => {
+                            console.warn('Speech error:', event);
+                            this.isSpeaking = false;
+                            if (this.currentButton) {
+                                this.currentButton.classList.remove('playing');
+                                this.currentButton = null;
+                            }
+                        };
+
+                        window.speechSynthesis.speak(utterance);
+                    } else {
+                        console.warn('Speech synthesis not supported');
+                    }
+                },
+
+                stop() {
+                    if ('speechSynthesis' in window) {
+                        window.speechSynthesis.cancel();
+                    }
+                    this.isSpeaking = false;
+                    if (this.currentButton) {
+                        this.currentButton.classList.remove('playing');
+                        this.currentButton = null;
+                    }
+                }
+            };
+
+            // 成功音效
+            function playSuccessSound() {
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const notes = [523.25, 659.25, 783.99];
+                    
+                    notes.forEach((freq, index) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.1);
+                        gain.gain.setValueAtTime(0.3, audioCtx.currentTime + index * 0.1);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + index * 0.1 + 0.3);
+                        osc.start(audioCtx.currentTime + index * 0.1);
+                        osc.stop(audioCtx.currentTime + index * 0.1 + 0.3);
+                    });
+                } catch(e) {
+                    // 静默处理
+                }
+            }
+
+            // ==================== 游戏状态 ====================
+            let matchedPairs = new Set();
+            // 新增：错误计数器 - 记录每个单词的错误次数
+            let errorCounters = {};
+
+            // DOM元素
+            const animalsArea = document.getElementById('animalsArea');
+            const wordsArea = document.getElementById('wordsArea');
+            const progressDots = document.getElementById('progressDots');
+            const progressText = document.getElementById('progressText');
+            const successModal = document.getElementById('successModal');
+            const restartBtn = document.getElementById('restartBtn');
+            const errorSummary = document.getElementById('errorSummary');
+
+            // ==================== 工具函数 ====================
+            function shuffleArray(array) {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            }
+
+            // ==================== 初始化 ====================
+            function initGame() {
+                pronunciationManager.stop();
+                matchedPairs.clear();
+                // 初始化错误计数器
+                errorCounters = {};
+                animalsData.forEach(animal => {
+                    errorCounters[animal.id] = 0;
+                });
+                
+                animalsArea.innerHTML = '';
+                wordsArea.innerHTML = '';
+                progressDots.innerHTML = '';
+                
+                animalsData.forEach(() => {
+                    const dot = document.createElement('span');
+                    dot.className = 'progress-dot';
+                    progressDots.appendChild(dot);
+                });
+                updateProgress();
+
+                const shuffledAnimals = shuffleArray(animalsData);
+                shuffledAnimals.forEach(animal => {
+                    animalsArea.appendChild(createAnimalCard(animal));
+                });
+
+                const shuffledWords = shuffleArray(animalsData);
+                shuffledWords.forEach(animal => {
+                    wordsArea.appendChild(createWordSlot(animal));
+                });
+
+                successModal.style.display = 'none';
+            }
+
+            // ==================== 创建动物卡片 ====================
+            function createAnimalCard(animal) {
+                const card = document.createElement('div');
+                card.className = 'animal-card';
+                card.draggable = true;
+                card.dataset.animalId = animal.id;
+                
+                const img = document.createElement('img');
+                img.src = animal.imageUrl;
+                img.alt = animal.name;
+                img.draggable = false;
+                img.loading = 'lazy';
+                
+                img.onerror = function() {
+                    this.style.display = 'none';
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'placeholder-image';
+                    const emojis = {
+                        'elephant': '🐘',
+                        'lion': '🦁',
+                        'panda': '🐼',
+                        'eagle': '🦅',
+                        'dolphin': '🐬',
+                        'giraffe': '🦒'
+                    };
+                    placeholder.textContent = emojis[animal.id] || animal.name.charAt(0);
+                    card.appendChild(placeholder);
+                };
+                
+                card.appendChild(img);
+                
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+                card.addEventListener('touchstart', handleTouchStart, { passive: false });
+                card.addEventListener('touchmove', handleTouchMove, { passive: false });
+                card.addEventListener('touchend', handleTouchEnd);
+                
+                return card;
+            }
+
+            // ==================== 创建单词槽 ====================
+            function createWordSlot(animal) {
+                const slot = document.createElement('div');
+                slot.className = 'word-slot';
+                slot.dataset.animalId = animal.id;
+                
+                // 单词内容和错误计数区域
+                const wordContent = document.createElement('div');
+                wordContent.className = 'word-content';
+                
+                const wordText = document.createElement('span');
+                wordText.className = 'word-text';
+                wordText.textContent = animal.name;
+                
+                // 错误计数显示
+                const errorDisplay = document.createElement('span');
+                errorDisplay.className = 'error-count';
+                errorDisplay.id = 'error-' + animal.id;
+                errorDisplay.textContent = '';
+                
+                wordContent.appendChild(wordText);
+                wordContent.appendChild(errorDisplay);
+                
+                const speakerBtn = document.createElement('button');
+                speakerBtn.className = 'speaker-btn';
+                speakerBtn.type = 'button';
+                speakerBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                `;
+                speakerBtn.title = 'Listen to pronunciation';
+                speakerBtn.setAttribute('aria-label', 'Play pronunciation of ' + animal.name);
+                
+                speakerBtn.addEventListener('pointerdown', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    pronunciationManager.speak(animal.word, this);
+                });
+                
+                speakerBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+                
+                slot.appendChild(wordContent);
+                slot.appendChild(speakerBtn);
+                
+                slot.addEventListener('dragover', handleDragOver);
+                slot.addEventListener('drop', handleDrop);
+                
+                return slot;
+            }
+
+            // ==================== 更新错误显示 ====================
+            function updateErrorDisplay(animalId) {
+                const errorDisplay = document.getElementById('error-' + animalId);
+                if (!errorDisplay) return;
+                
+                const count = errorCounters[animalId] || 0;
+                
+                if (count > 0) {
+                    errorDisplay.textContent = '❌ ' + count + ' mistake' + (count > 1 ? 's' : '');
+                    errorDisplay.classList.add('has-errors');
+                    // 重新触发动画
+                    errorDisplay.classList.remove('has-errors');
+                    void errorDisplay.offsetWidth; // 强制回流
+                    errorDisplay.classList.add('has-errors');
+                } else {
+                    errorDisplay.textContent = '';
+                    errorDisplay.classList.remove('has-errors');
+                }
+            }
+
+            // ==================== 拖拽处理 ====================
+            let draggedElement = null;
+
+            function handleDragStart(e) {
+                if (this.classList.contains('matched')) {
+                    e.preventDefault();
+                    return;
+                }
+                draggedElement = this;
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', this.dataset.animalId);
+            }
+
+            function handleDragEnd(e) {
+                if (draggedElement) {
+                    draggedElement.classList.remove('dragging');
+                }
+                draggedElement = null;
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            }
+
+            function handleDrop(e) {
+                e.preventDefault();
+                const targetSlot = e.currentTarget;
+                const targetAnimalId = targetSlot.dataset.animalId;
+                const droppedAnimalId = e.dataTransfer.getData('text/plain');
+                
+                if (!droppedAnimalId) return;
+                
+                const draggedCard = document.querySelector(`.animal-card[data-animal-id="${droppedAnimalId}"]`);
+                
+                if (droppedAnimalId === targetAnimalId) {
+                    handleCorrectMatch(draggedCard, targetSlot, droppedAnimalId);
+                } else {
+                    handleIncorrectMatch(draggedCard, targetAnimalId);
+                }
+                
+                if (draggedCard) {
+                    draggedCard.classList.remove('dragging');
+                }
+                draggedElement = null;
+            }
+
+            // ==================== 触摸处理 ====================
+            let touchElement = null;
+
+            function handleTouchStart(e) {
+                if (this.classList.contains('matched')) return;
+                e.preventDefault();
+                touchElement = this;
+                this.classList.add('dragging');
+            }
+
+            function handleTouchMove(e) {
+                if (!touchElement) return;
+                e.preventDefault();
+            }
+
+            function handleTouchEnd(e) {
+                if (!touchElement) return;
+                e.preventDefault();
+                
+                const touch = e.changedTouches[0];
+                const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+                const wordSlot = elUnder?.closest('.word-slot');
+                
+                if (wordSlot && touchElement.dataset.animalId === wordSlot.dataset.animalId) {
+                    handleCorrectMatch(touchElement, wordSlot, touchElement.dataset.animalId);
+                } else if (wordSlot && touchElement.dataset.animalId !== wordSlot.dataset.animalId) {
+                    handleIncorrectMatch(touchElement, wordSlot.dataset.animalId);
+                }
+                
+                touchElement.classList.remove('dragging');
+                touchElement = null;
+            }
+
+            // ==================== 配对逻辑 ====================
+            function handleCorrectMatch(animalCard, wordSlot, animalId) {
+                if (matchedPairs.has(animalId)) return;
+                
+                matchedPairs.add(animalId);
+                animalCard.classList.add('matched');
+                animalCard.draggable = false;
+                wordSlot.classList.add('matched');
+                
+                playSuccessSound();
+                updateProgress();
+                
+                if (matchedPairs.size === animalsData.length) {
+                    setTimeout(function() {
+                        pronunciationManager.stop();
+                        showSuccessModal();
+                    }, 600);
+                }
+            }
+
+            function handleIncorrectMatch(animalCard, targetWordId) {
+                if (!animalCard) return;
+                
+                // 增加目标单词的错误计数
+                if (targetWordId && errorCounters[targetWordId] !== undefined) {
+                    errorCounters[targetWordId]++;
+                    updateErrorDisplay(targetWordId);
+                }
+                
+                // 抖动动画
+                animalCard.classList.add('shake');
+                setTimeout(function() {
+                    animalCard.classList.remove('shake');
+                }, 500);
+            }
+
+            // ==================== 进度 ====================
+            function updateProgress() {
+                const dots = progressDots.querySelectorAll('.progress-dot');
+                dots.forEach(function(dot, index) {
+                    if (index < matchedPairs.size) {
+                        dot.classList.add('completed');
+                    } else {
+                        dot.classList.remove('completed');
+                    }
+                });
+                progressText.textContent = matchedPairs.size + '/' + animalsData.length;
+            }
+
+            // ==================== 成功弹窗 ====================
+            function showSuccessModal() {
+                // 生成错误总结
+                const totalErrors = Object.values(errorCounters).reduce((sum, count) => sum + count, 0);
+                
+                if (totalErrors === 0) {
+                    errorSummary.innerHTML = '🎉 Perfect! No mistakes at all!';
+                } else {
+                    let summaryHTML = '📊 <strong>Mistake Summary:</strong><br>';
+                    animalsData.forEach(animal => {
+                        const count = errorCounters[animal.id] || 0;
+                        if (count > 0) {
+                            summaryHTML += '• <strong>' + animal.name + '</strong>: ' + count + ' mistake' + (count > 1 ? 's' : '') + '<br>';
+                        }
+                    });
+                    summaryHTML += '<br>Total: <strong>' + totalErrors + '</strong> mistake' + (totalErrors > 1 ? 's' : '') + ' - Keep practicing! 💪';
+                    errorSummary.innerHTML = summaryHTML;
+                }
+                
+                successModal.style.display = 'flex';
+            }
+
+            // ==================== 弹窗 ====================
+            restartBtn.addEventListener('click', function() {
+                initGame();
+            });
+
+            successModal.addEventListener('click', function(e) {
+                if (e.target === successModal) {
+                    initGame();
+                }
+            });
+
+            // ==================== 全局 ====================
+            document.addEventListener('dragover', function(e) { e.preventDefault(); });
+            document.addEventListener('drop', function(e) { e.preventDefault(); });
+
+            // ==================== 启动 ====================
+            initGame();
+        })();
+    </script>
+</body>
+</html>
